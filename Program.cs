@@ -69,30 +69,33 @@ var rateLimitConfig = builder.Configuration.GetSection("RateLimit");
 
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddFixedWindowLimiter(
-        "api",
-        limiterOptions =>
-        {
-            limiterOptions.PermitLimit =
-                rateLimitConfig.GetValue("PermitLimit", 10);
+    options.AddFixedWindowLimiter("api", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 2;
+        limiterOptions.Window = TimeSpan.FromSeconds(30);
+        limiterOptions.QueueLimit = 0;
+        limiterOptions.QueueProcessingOrder =
+            QueueProcessingOrder.OldestFirst;
+        limiterOptions.AutoReplenishment = true;
+    });
 
-            limiterOptions.Window =
-                TimeSpan.FromSeconds(
-                    rateLimitConfig.GetValue("WindowSeconds", 60)
-                );
+    options.RejectionStatusCode =
+        StatusCodes.Status429TooManyRequests;
 
-            limiterOptions.QueueLimit =
-                rateLimitConfig.GetValue("QueueLimit", 0);
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType =
+            "application/json";
 
-            limiterOptions.QueueProcessingOrder =
-                QueueProcessingOrder.OldestFirst;
-
-            limiterOptions.AutoReplenishment = true;
-        });
-
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new
+            {
+                statusCode = 429,
+                message = "Too many requests. Please try again later."
+            },
+            cancellationToken);
+    };
 });
-
 // ----------------------------------------------------
 // Build Application
 // ----------------------------------------------------
