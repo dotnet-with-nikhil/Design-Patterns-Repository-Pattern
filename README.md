@@ -93,3 +93,20 @@ public class Product
     public int Stock { get; set; }
 }
 
+# IEnumerable vs IQueryable in EF Core
+
+## Why do we have both `GetAsEnumerable()` and `GetProducts()`?
+
+In our Repository, we have:
+
+```csharp
+public IEnumerable<Product> GetAsEnumerable()
+{
+    return _context.Products.AsEnumerable();
+}
+
+public IQueryable<Product> GetProducts()
+{
+    return _context.Products.AsQueryable();
+}
+
