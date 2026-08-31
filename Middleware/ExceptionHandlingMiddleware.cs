@@ -22,8 +22,11 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
     static async Task Write(HttpContext c, HttpStatusCode s, string m)
     {
         if (c.Response.HasStarted) return;
+
         c.Response.StatusCode = (int)s;
+
         c.Response.ContentType = "application/json";
+
         await c.Response.WriteAsync(JsonSerializer.Serialize(new { statusCode = (int)s, message = m, traceId = c.TraceIdentifier }));
     }
 }
